@@ -28,3 +28,8 @@ class ToolTip:
         self.tip_window = None
         if tw:
             tw.destroy()
+
+    def destroy(self, event=None):
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None

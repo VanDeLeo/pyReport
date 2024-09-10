@@ -6,6 +6,8 @@ import Modules.config_handler
 import Modules.read_log
 import subprocess
 import threading
+import os
+import time
 
 import Modules.tool_tip
 
@@ -15,6 +17,9 @@ class App():
 
     def __init__(self, master) -> None:
         self.master = master
+
+        self.tooltips = []
+        self.lastModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
 
         notebook = ttk.Notebook(self.master)
         notebook.pack(expand=True, fill=BOTH)
@@ -33,6 +38,12 @@ class App():
         self.widgets_fails_tab(fails_tab)
         self.widgets_more_tab(more_tab)
 
+
+        self.update_plot()
+        self.update_history_indicators()
+        self.update_last_unit()
+        self.update_history_tab()
+        
         self.update_all()
 
     def widgets_main_tab(self, tab):
@@ -117,17 +128,20 @@ class App():
 
     def update_history_indicators(self):
         last30tests = Modules.read_log.readAll(logFolder)[-30:]
-        i=0
+
+        for tooltip in self.tooltips:
+            tooltip.destroy()
+        self.tooltips.clear()
         
-        for indicator in self.historyIndicators:
-            if "PASS" in last30tests[i]:
-                indicator.configure(fg_color="#28b463")
-                tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-            elif "FAIL" in last30tests[i]:
-                indicator.configure(fg_color="#e74c3c")
-                tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-                
-            i+=1
+        for i, indicator in enumerate(self.historyIndicators):
+            if i < len(last30tests):
+                if "PASS" in last30tests[i]:
+                    indicator.configure(fg_color="#28b463")
+                    tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+                elif "FAIL" in last30tests[i]:
+                    indicator.configure(fg_color="#e74c3c")
+                    tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+                self.tooltips.append(tooltip)
 
     def update_last_unit(self):
         serial,partNumber,testStatus,testStart,testEnd,failMode,testResult,testLimits = Modules.read_log.lastUnit(logFolder)
@@ -153,10 +167,15 @@ class App():
         self.historyBox.configure(state=DISABLED)
 
     def update_all(self):
-        self.update_plot()
-        self.update_history_indicators()
-        self.update_last_unit()
-        self.update_history_tab()
+
+        currentModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
+
+        if currentModTime != self.lastModTime:
+            self.lastModTime = currentModTime
+            self.update_plot()
+            self.update_history_indicators()
+            self.update_last_unit()
+            self.update_history_tab()
 
         self.master.after(int(updateRate), self.update_all)
 
