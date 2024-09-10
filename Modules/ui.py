@@ -19,7 +19,11 @@ class App():
         self.master = master
 
         self.tooltips = []
-        self.lastModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
+        try:
+            self.lastModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
+        except UnboundLocalError:
+            print("No se encontro el log de hoy")
+        self.firstUpdate = False
 
         notebook = ttk.Notebook(self.master)
         notebook.pack(expand=True, fill=BOTH)
@@ -129,19 +133,32 @@ class App():
     def update_history_indicators(self):
         last30tests = Modules.read_log.readAll(logFolder)[-30:]
 
-        for tooltip in self.tooltips:
-            tooltip.destroy()
-        self.tooltips.clear()
+        # for tooltip in self.tooltips:
+        #     tooltip.destroy()
+        # self.tooltips.clear()
+
+        if self.firstUpdate == False:
+            for i, indicator in enumerate(self.historyIndicators):
+                if i < len(last30tests):
+                    if "PASS" in last30tests[i]:
+                        indicator.configure(fg_color="#28b463")
+                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+                    elif "FAIL" in last30tests[i]:
+                        indicator.configure(fg_color="#e74c3c")
+                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+                    self.tooltips.append(tooltip)
+            self.firstUpdate = True
+        else:
+            for i, indicator in enumerate(self.historyIndicators):
+                if i < len(last30tests):
+                    if "PASS" in last30tests[i]:
+                        indicator.configure(fg_color="#28b463")
+                        self.tooltips[i].text = last30tests[i]                    
+                    elif "FAIL" in last30tests[i]:
+                        indicator.configure(fg_color="#e74c3c")
+                        self.tooltips[i].text = last30tests[i]  
         
-        for i, indicator in enumerate(self.historyIndicators):
-            if i < len(last30tests):
-                if "PASS" in last30tests[i]:
-                    indicator.configure(fg_color="#28b463")
-                    tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-                elif "FAIL" in last30tests[i]:
-                    indicator.configure(fg_color="#e74c3c")
-                    tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-                self.tooltips.append(tooltip)
+        
 
     def update_last_unit(self):
         serial,partNumber,testStatus,testStart,testEnd,failMode,testResult,testLimits = Modules.read_log.lastUnit(logFolder)

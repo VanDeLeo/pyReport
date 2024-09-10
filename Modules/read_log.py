@@ -11,7 +11,6 @@ def getLogPath(logFolder):
         if datetime.date.today().strftime('%d-%m-%Y') in log:
             logPath = os.path.join(logFolder,log)
             break
-    
     return logPath
 
 def readAll(logFolder):
