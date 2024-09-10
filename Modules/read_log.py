@@ -5,13 +5,20 @@ from tkinter import messagebox
 def getLogPath(logFolder):
     logFolder = os.path.abspath(logFolder)
 
-    logList = os.listdir(logFolder)
+    try:
+        logList = os.listdir(logFolder)
+    except FileNotFoundError:
+        messagebox.showerror("Error", ("No se pudo encontrar la carpeta "+ logFolder))
+        exit(0)
 
     for log in logList:
         if datetime.date.today().strftime('%d-%m-%Y') in log:
             logPath = os.path.join(logFolder,log)
-            break
-    return logPath
+            return logPath
+    
+    messagebox.showerror("Error", ("No se encontraron logs en la carpeta " + logFolder + " cambie la ruta desde el archivo de configuracion o genere un log valido"))
+    return exit(0)
+    
 
 def readAll(logFolder):
     try:

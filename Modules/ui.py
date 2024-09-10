@@ -7,11 +7,11 @@ import Modules.read_log
 import subprocess
 import threading
 import os
-import time
-
 import Modules.tool_tip
+import Modules.config_menu
+from tkinter import messagebox
 
-projectNameData, stationNameData, updateRate, logFolder = Modules.config_handler.all_config()
+projectNameData, stationNameData, sapID, updateRate, logFolder = Modules.config_handler.all_config()
 
 class App():
 
@@ -23,6 +23,7 @@ class App():
             self.lastModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
         except UnboundLocalError:
             print("No se encontro el log de hoy")
+
         self.firstUpdate = False
 
         notebook = ttk.Notebook(self.master)
@@ -47,8 +48,11 @@ class App():
         self.update_history_indicators()
         self.update_last_unit()
         self.update_history_tab()
+        self.update_fail_tab()
         
         self.update_all()
+
+        self.master.protocol("WM_DELETE_WINDOW", self.close_master)
 
     def widgets_main_tab(self, tab):
         #HistoryFrame
@@ -110,16 +114,26 @@ class App():
         textboxFrame.grid_columnconfigure(0, weight=1)
         
     def widgets_fails_tab(self, tab):
-        failsBox = CTkTextbox(tab)
-        failsBox.configure(state=DISABLED)
-        failsBox.pack(side=TOP, expand=TRUE, fill=BOTH)
+        titleLabel = CTkLabel(tab, text="[SERIAL - PARTNUMBER - TEST STATUS - TEST START - TEST END - FAIL MODE - TEST RESULT - TEST LIMITS]", font=("roboto",10))
+        titleLabel.pack(side=TOP)
+        textboxFrame = CTkFrame(tab)
+        textboxFrame.pack(side=TOP, expand=True, fill=BOTH)
+        self.failsBox = Text(textboxFrame, border=0, font=("roboto"))
+        self.failsBox.tag_configure("fail", foreground="red")
+        self.failsBox.grid(row=0,column=0,sticky=NSEW)
+        self.failsBox.configure(state=DISABLED)
+        scrollbar = CTkScrollbar(textboxFrame, command=self.failsBox.yview)
+        scrollbar.grid(row=0,column=1,sticky=NS)
+        self.failsBox.configure(yscrollcommand=scrollbar.set)
+        textboxFrame.grid_rowconfigure(0, weight=1)
+        textboxFrame.grid_columnconfigure(0, weight=1)
 
     def widgets_more_tab(self, tab):
         self.openLogButton = CTkButton(tab, text="Abrir .log",command=self.open_logfile_thread)
         self.openLogButton.pack(side=TOP,pady=10)
         generateXlsButton = CTkButton(tab, text="Generar archivo .xls")
         generateXlsButton.pack(side=TOP,pady=10)
-        settingsButton = CTkButton(tab, text="Configuración")
+        settingsButton = CTkButton(tab, text="Configuración", command=self.open_config_menu_thread)
         settingsButton.pack(side=TOP, pady=10)
 
     def update_plot(self):
@@ -183,6 +197,15 @@ class App():
                 self.historyBox.insert(END, item, "fail")
         self.historyBox.configure(state=DISABLED)
 
+    def update_fail_tab(self):
+        logData = Modules.read_log.readFails(logFolder)
+        logData = logData[::-1]
+        self.failsBox.configure(state=NORMAL)
+        self.failsBox.delete(1.0,END)
+        for item in logData:
+            self.failsBox.insert(END, item, "fail")
+        self.failsBox.configure(state=DISABLED)
+
     def update_all(self):
 
         currentModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
@@ -192,9 +215,14 @@ class App():
             self.update_plot()
             self.update_history_indicators()
             self.update_last_unit()
+            self.update_fail_tab()
             self.update_history_tab()
 
-        self.master.after(int(updateRate), self.update_all)
+        try:
+            self.master.after(int(updateRate), self.update_all)
+        except ValueError:
+            messagebox.showerror("Error", ("El rate de actualización debe ser de tipo int por lo que: " + str(updateRate) + " no es valido, revise el dato manualmente desde el archivo de configuraciones"))
+            exit(0)
 
 
     def open_logfile_thread(self):
@@ -207,3 +235,12 @@ class App():
         process = subprocess.Popen(["notepad",logPath])        
         process.wait()
         self.openLogButton.configure(state=NORMAL)
+
+    def open_config_menu_thread(self):
+        threading.Thread(target=self.open_config_menu).start()
+
+    def open_config_menu(self):
+        Modules.config_menu.ConfigMenu(self.master)
+
+    def close_master(self):
+        exit(0)
