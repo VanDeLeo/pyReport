@@ -1,3 +1,11 @@
+# made by leo
+
+# Title: pyReport
+# Autor: leonardo.avalos.montes@continental-corporation.com
+# Position: Test Maintenance Technician
+# Location: Continental Periferico - Guadalajara
+# Date: 06/09/2024
+
 from customtkinter import *
 from Modules.ui import App
 import msvcrt
@@ -34,4 +42,13 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+
+
+#            *
+#           *
+#          *
+#         ****
+#           *
+#          *
+#         *     
+  

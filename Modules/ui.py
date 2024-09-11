@@ -1,3 +1,11 @@
+# made by leo
+
+# Title: pyReport
+# Autor: leonardo.avalos.montes@continental-corporation.com
+# Position: Test Maintenance Technician
+# Location: Continental Periferico - Guadalajara
+# Date: 06/09/2024
+
 from customtkinter import *
 from tkinter import ttk, Text, Scrollbar
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -146,10 +154,6 @@ class App():
 
     def update_history_indicators(self):
         last30tests = Modules.read_log.readAll(logFolder)[-30:]
-
-        # for tooltip in self.tooltips:
-        #     tooltip.destroy()
-        # self.tooltips.clear()
 
         if self.firstUpdate == False:
             for i, indicator in enumerate(self.historyIndicators):
