@@ -18,6 +18,9 @@ import os
 import Modules.tool_tip
 import Modules.config_menu
 from tkinter import messagebox
+from PIL import Image
+import datetime
+from Modules.tools import resource_path
 
 projectNameData, stationNameData, sapID, updateRate, logFolder = Modules.config_handler.all_config()
 
@@ -27,12 +30,14 @@ class App():
         self.master = master
 
         self.tooltips = []
+        
         try:
             self.lastModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
         except UnboundLocalError:
             print("No se encontro el log de hoy")
 
         self.firstUpdate = False
+        self.registeredShift = Modules.read_log.getShift(Modules.read_log.getLogPath(logFolder))[0]
 
         notebook = ttk.Notebook(self.master)
         notebook.pack(expand=True, fill=BOTH)
@@ -50,8 +55,7 @@ class App():
         self.widgets_history_tab(history_tab)
         self.widgets_fails_tab(fails_tab)
         self.widgets_more_tab(more_tab)
-
-
+        
         self.update_plot()
         self.update_history_indicators()
         self.update_last_unit()
@@ -83,8 +87,13 @@ class App():
         leftFrame.pack_propagate(False)
         projectName = CTkLabel(leftFrame, text=projectNameData, anchor="w", font=("roboto",30,"bold"))
         projectName.pack(side=TOP, anchor="w", padx=10, pady=5)
-        stationName = CTkLabel(leftFrame, text=stationNameData, anchor="w", font=("roboto",20))
-        stationName.pack(side=TOP, anchor="w", padx=10, pady=5)
+        dataFrame1 = CTkFrame(leftFrame, fg_color="#FFFFFF")
+        dataFrame1.pack(side=TOP, anchor="w", padx=10,pady=5)
+        stationName = CTkLabel(dataFrame1, text=stationNameData, anchor="w", font=("roboto",20))
+        #stationName.pack(side=TOP, anchor="w", padx=10, pady=5)
+        stationName.grid(column=0,row=0)
+        sapNumber = CTkLabel(dataFrame1, text=("SAP "+sapID), anchor="w", font=("roboto",20))
+        sapNumber.grid(column=1,row=0, padx=10)
         lastUnit = CTkLabel(leftFrame, text="Ultima UUT", anchor="w")
         lastUnit.pack(side=TOP, anchor="w", padx=10, pady=5)
         self.unitSerial = CTkLabel(leftFrame, text="Serial", anchor="w")
@@ -137,11 +146,15 @@ class App():
         textboxFrame.grid_columnconfigure(0, weight=1)
 
     def widgets_more_tab(self, tab):
-        self.openLogButton = CTkButton(tab, text="Abrir .log",command=self.open_logfile_thread)
-        self.openLogButton.pack(side=TOP,pady=10)
-        generateXlsButton = CTkButton(tab, text="Generar archivo .xls")
+        logImage = CTkImage(Image.open(resource_path("./Images/log.png")), size=(20,20))
+        xlsImage = CTkImage(Image.open(resource_path("./Images/xls.png")), size=(20,20))
+        self.openLogButton = CTkButton(tab, text="Abrir .log", width=150, height=50, fg_color="#FFC300", text_color="#000000", hover_color="#EAB300", command=self.open_logfile_thread)
+        self.openLogButton.configure(image=logImage)
+        self.openLogButton.pack(side=TOP,pady=(40,10))
+        generateXlsButton = CTkButton(tab, text="Generar archivo .xls", width=150, height=50, fg_color="#FFC300", text_color="#000000", hover_color="#EAB300")
+        generateXlsButton.configure(image=xlsImage)
         generateXlsButton.pack(side=TOP,pady=10)
-        settingsButton = CTkButton(tab, text="Configuración", command=self.open_config_menu_thread)
+        settingsButton = CTkButton(tab, text="Configuración", width=150, height=50, fg_color="#FFC300", text_color="#000000", hover_color="#EAB300", command=self.open_config_menu_thread)
         settingsButton.pack(side=TOP, pady=10)
 
     def update_plot(self):
@@ -153,29 +166,34 @@ class App():
         self.pieCanvas.draw()
 
     def update_history_indicators(self):
-        last30tests = Modules.read_log.readAll(logFolder)[-30:]
+        last30tests = Modules.read_log.readAll(logFolder)[-28:]
+        #print(len(self.tooltips))
 
-        if self.firstUpdate == False:
+        if self.firstUpdate == False or len(self.tooltips) < 28: #If the case is False the objects ToolTips will be created
             for i, indicator in enumerate(self.historyIndicators):
-                if i < len(last30tests):
-                    if "PASS" in last30tests[i]:
-                        indicator.configure(fg_color="#28b463")
-                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-                    elif "FAIL" in last30tests[i]:
-                        indicator.configure(fg_color="#e74c3c")
-                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
-                    self.tooltips.append(tooltip)
+                tooltip = Modules.tool_tip.ToolTip(indicator,"")
+##                if i < len(last30tests):
+##                    if "PASS" in last30tests[i]:
+##                        indicator.configure(fg_color="#28b463")
+##                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+##                    elif "FAIL" in last30tests[i]:
+##                        indicator.configure(fg_color="#e74c3c")
+##                        tooltip = Modules.tool_tip.ToolTip(indicator,last30tests[i])
+##                    self.tooltips.append(tooltip)
+                self.tooltips.append(tooltip)
             self.firstUpdate = True
-        else:
+        
+        else: #On the other hand only the ToolTip text will be edited
             for i, indicator in enumerate(self.historyIndicators):
                 if i < len(last30tests):
                     if "PASS" in last30tests[i]:
                         indicator.configure(fg_color="#28b463")
-                        self.tooltips[i].text = last30tests[i]                    
+                        #self.tooltips[i].text = last30tests[i]                    
                     elif "FAIL" in last30tests[i]:
                         indicator.configure(fg_color="#e74c3c")
-                        self.tooltips[i].text = last30tests[i]  
-        
+                        #self.tooltips[i].text = last30tests[i]
+                    if i < len(self.tooltips):
+                        self.tooltips[i].text = last30tests[i]
         
 
     def update_last_unit(self):
@@ -210,11 +228,15 @@ class App():
             self.failsBox.insert(END, item, "fail")
         self.failsBox.configure(state=DISABLED)
 
-    def update_all(self):
+    def update_all(self): #This method update all the ui calling the other update methods
 
         currentModTime = os.path.getmtime(Modules.read_log.getLogPath(logFolder))
+        currentShift = Modules.read_log.getShift(Modules.read_log.getLogPath(logFolder))[0]
 
-        if currentModTime != self.lastModTime:
+        if currentShift != self.registeredShift: #End program if the shift changes
+            self.close_master()
+
+        if currentModTime != self.lastModTime: #If the file was modified the data will be updated
             self.lastModTime = currentModTime
             self.update_plot()
             self.update_history_indicators()
@@ -223,10 +245,10 @@ class App():
             self.update_history_tab()
 
         try:
-            self.master.after(int(updateRate), self.update_all)
+            self.master.after(int(updateRate), self.update_all) #Start a cycle to update the ui with the new data from the log file
         except ValueError:
             messagebox.showerror("Error", ("El rate de actualización debe ser de tipo int por lo que: " + str(updateRate) + " no es valido, revise el dato manualmente desde el archivo de configuraciones"))
-            exit(0)
+            sys.exit(0)
 
 
     def open_logfile_thread(self):
@@ -247,4 +269,4 @@ class App():
         Modules.config_menu.ConfigMenu(self.master)
 
     def close_master(self):
-        exit(0)
+        sys.exit(0)

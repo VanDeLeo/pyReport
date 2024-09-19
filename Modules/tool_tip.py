@@ -16,8 +16,10 @@ class ToolTip:
         self.bind_id_enter = self.widget.bind("<Enter>", self.show_tip)
         self.bind_id_leave = self.widget.bind("<Leave>", self.hide_tip)
 
+    #event=None prevents a TypeError from occurring because the showtip and hidetip methods are bound to a binding that normally always expects an argument to be passed to the method
+
     def show_tip(self, event=None):  # Agregamos 'event=None' para evitar el error
-        # Crear la ventana para el tooltip
+        # Create window for the Tooltip
         if self.tip_window or not self.text:
             return
         x, y, _cx, cy = self.widget.bbox("insert")
@@ -27,23 +29,11 @@ class ToolTip:
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
         
-        # Crear el texto del tooltip
-        self.label = Label(tw, text=self.text, justify='left', background="#AAAAAA", relief='solid', borderwidth=1, font=("tahoma", 10, "normal"))
+        self.label = Label(tw, text=self.text, justify='left', background="#F2F2F2", relief='solid', borderwidth=1, font=("tahoma", 10, "normal"))
         self.label.pack(ipadx=1)
 
-    # def update_text(self, new_text):
-    #     self.label.configure(text=new_text)
-
-    def hide_tip(self, event=None):  # También agregamos 'event=None' aquí
+    def hide_tip(self, event=None):
         tw = self.tip_window
         self.tip_window = None
         if tw:
             tw.destroy()
-
-    # def destroy(self, event=None):
-    #     if self.tip_window:
-    #         self.tip_window.destroy()
-    #         self.tip_window = None
-
-    #     self.widget.unbind("<Enter>", self.bind_id_enter)
-    #     self.widget.unbind("<Leave>", self.bind_id_leave)

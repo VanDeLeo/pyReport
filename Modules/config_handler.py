@@ -8,8 +8,9 @@
 
 import configparser
 import os.path as path
+from Modules.tools import resource_path
 
-configPath = path.abspath("./Config/config.ini")
+configPath = path.abspath(resource_path("./Config/config.ini"))
 config = configparser.ConfigParser()
 
 def all_config():
