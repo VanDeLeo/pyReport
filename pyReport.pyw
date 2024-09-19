@@ -11,8 +11,9 @@ from Modules.ui import App
 import msvcrt
 import sys
 
-LOCKFILE = "tmp/pyreport.lock"
+LOCKFILE = "tmp/pyreport.locks"
 
+#This function verify if the process already running with a special file that block if the case is true
 def is_app_running(app_name="pyReport"):
     global lockfile
 
@@ -32,10 +33,12 @@ def main():
     root.title("pyReport")
     root.geometry("500x300")
     root.resizable(False,False)
+    root.iconbitmap("Images/icon.ico")
     set_appearance_mode("light")
     Window = App(root)
     root.mainloop()
 
+    #Unlock the file when the process ends
     msvcrt.locking(lockfile.fileno(), msvcrt.LK_UNLCK,1)
     lockfile.close()
     os.remove(LOCKFILE)
